@@ -7,6 +7,10 @@ import {
 } from "@heroicons/react/24/outline";
 import Swal from "sweetalert2";
 
+// IMPORT HOOK
+import {useEffect, useState} from "react";
+import supabase from "../config/supabaseClient";
+
 const MENU = [
   {label: "Dashboard", icon: HomeIcon},
   {label: "Users", icon: UsersIcon},
@@ -49,6 +53,33 @@ export default function Sidebar({
     }
   };
 
+  // MENGAMBIL DATA ADMIN
+  const [fetchError, setFetchError] = useState(null);
+  const [admin, setAdmin] = useState(null);
+
+  // MENAMPILKAN DATA ADMIN SAAT LAYAR TAMPIL DI AWAL
+  useEffect(() => {
+    const fetchAdmin = async () => {
+      const {data, error} = await supabase
+        .from("admin")
+        .select("id", "username", "email")
+        .limit(1)
+        .single();
+
+      if (error) {
+        setFetchError("Admin Not Found");
+        setAdmin(null);
+        console.log(error);
+      }
+      if (data) {
+        setAdmin(data);
+        setFetchError(null);
+      }
+    };
+
+    fetchAdmin();
+  }, []);
+
   return (
     <aside
       className={`
@@ -71,7 +102,7 @@ export default function Sidebar({
             className={`text-sm font-semibold text-ink whitespace-nowrap transition-opacity dark:text-white
               ${collapsed ? "md:opacity-0 md:w-0" : "opacity-100"}`}
           >
-            Admin Panel
+            Admin Simple Store
           </span>
         </div>
         <button
@@ -125,13 +156,23 @@ export default function Sidebar({
           <div className="h-9 w-9 shrink-0 rounded-full bg-ink/10 flex items-center justify-center text-xs font-semibold text-ink dark:bg-slate-700 dark:text-slate-200">
             US
           </div>
+          {/* ADMIN PROFILE  */}
           <div className={`min-w-0 flex-1 ${collapsed ? "md:hidden" : ""}`}>
-            <p className="truncate text-sm font-medium text-ink dark:text-white">
-              User Name
-            </p>
-            <p className="truncate text-xs text-muted dark:text-slate-400">
-              user@mail.com
-            </p>
+            {fetchError && (
+              <p className="truncate text-xs text-muted dark:text-slate-400">
+                {fetchError}
+              </p>
+            )}
+            {admin?.map((adm) => (
+              <div key={adm.id ?? adm.email}>
+                <p className="truncate text-sm font-medium text-ink dark:text-white">
+                  {adm.username}
+                </p>
+                <p className="truncate text-xs text-muted dark:text-slate-400">
+                  {adm.email}
+                </p>
+              </div>
+            ))}
           </div>
           <button
             onClick={handleLogout}

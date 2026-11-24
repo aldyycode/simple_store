@@ -27,23 +27,6 @@ export default function StatCard({
           <p className="mt-1 text-2xl font-semibold text-ink tracking-tight dark:text-white">
             {value}
           </p>
-
-          {trend && (
-            <p
-              className={`mt-2 inline-flex items-center gap-1 text-xs font-medium
-                ${
-                  trend.positive
-                    ? "text-emerald-600 dark:text-emerald-400"
-                    : "text-rose-600 dark:text-rose-400"
-                }`}
-            >
-              <span>{trend.positive ? "▲" : "▼"}</span>
-              <span>{trend.value}</span>
-              <span className="text-muted dark:text-slate-400 font-normal">
-                vs bulan lalu
-              </span>
-            </p>
-          )}
         </div>
 
         {Icon && (

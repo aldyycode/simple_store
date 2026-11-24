@@ -1,5 +1,6 @@
 import StatCard from "../components/StatCard";
 import {UsersIcon, ShoppingBagIcon} from "@heroicons/react/24/outline";
+import supabase from "../config/supabaseClient";
 
 export default function Dashboard({title}) {
   // TODO: ganti dengan data asli dari API
@@ -8,6 +9,7 @@ export default function Dashboard({title}) {
     totalProducts: 86,
   };
 
+  console.log(supabase);
   return (
     <section className="space-y-6">
       {/* Header halaman */}
@@ -39,28 +41,6 @@ export default function Dashboard({title}) {
           accent="emerald"
           trend={{value: "+4%", positive: true}}
         />
-
-        {/* Slot card berikutnya */}
-        <div
-          className="hidden lg:flex rounded-2xl border-2 border-dashed border-line
-          bg-surface/40 dark:bg-slate-900/40 dark:border-slate-800
-          p-5 items-center justify-center text-xs text-muted dark:text-slate-500"
-        >
-          Slot card berikutnya
-        </div>
-      </div>
-
-      {/* AREA KONTEN KOMPONEN DI SINI */}
-      <div
-        className="rounded-2xl border-2 border-dashed border-line bg-surface/40
-        dark:bg-slate-900/40 dark:border-slate-800 px-6 py-16 text-center"
-      >
-        <p className="text-sm font-medium text-ink dark:text-white">
-          Area Konten
-        </p>
-        <p className="mt-1 text-sm text-muted dark:text-slate-400">
-          Tempatkan chart, tabel, atau widget lain di sini.
-        </p>
       </div>
     </section>
   );
