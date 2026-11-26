@@ -1,15 +1,62 @@
-import StatCard from "../components/StatCard";
-import {UsersIcon, ShoppingBagIcon} from "@heroicons/react/24/outline";
+// import StatCard from "../components/StatCard";
+// import {UsersIcon, ShoppingBagIcon} from "@heroicons/react/24/outline";
 import supabase from "../config/supabaseClient";
+
+// IMPORT HOOK
+import {useState, useEffect} from "react";
 
 export default function Dashboard({title}) {
   // TODO: ganti dengan data asli dari API
-  const stats = {
-    totalUsers: 1248,
-    totalProducts: 86,
-  };
+  // const stats = {
+  //   totalUsers: 1248,
+  //   totalProducts: 86,
+  // };
 
-  console.log(supabase);
+  const [totalProducts, setTotalProducts] = useState(0);
+  const [loadingProducts, setLoadingProducts] = useState(true);
+  const [totalProductError, setTotalProductError] = useState(null);
+
+  // MENAMPILKAN DATA TOTAL PRODUK DAN USER
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchTotalProducts = async () => {
+      setLoadingProducts(true);
+
+      try {
+        const {count, error} = await supabase
+          .from("products")
+          .select("id", {count: "exact"});
+
+        if (!isMounted) return;
+
+        if (error) {
+          console.error("Supabase error detail:", error);
+          setTotalProductError(error.message || "Gagal memuat data");
+          setTotalProducts(0);
+        } else {
+          setTotalProductError(null);
+          setTotalProducts(count ?? 0);
+        }
+      } catch (err) {
+        if (!isMounted) return;
+        console.error("Network/runtime error:", err);
+        setTotalProductError(err?.message || "Kesalahan jaringan");
+        setTotalProducts(0);
+      } finally {
+        if (isMounted) {
+          setLoadingProducts(false);
+        }
+      }
+    };
+
+    fetchTotalProducts();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   return (
     <section className="space-y-6">
       {/* Header halaman */}
@@ -25,22 +72,25 @@ export default function Dashboard({title}) {
       </div>
 
       {/* Stat Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        <StatCard
-          label="Total Users"
-          value={stats.totalUsers.toLocaleString("id-ID")}
-          icon={UsersIcon}
-          accent="sky"
-          trend={{value: "+12%", positive: true}}
-        />
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {/* Card Total Produk */}
+        <div className="rounded-xl border border-line bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <p className="text-sm font-medium text-muted dark:text-slate-400">
+            Total Produk
+          </p>
 
-        <StatCard
-          label="Total Product"
-          value={stats.totalProducts.toLocaleString("id-ID")}
-          icon={ShoppingBagIcon}
-          accent="emerald"
-          trend={{value: "+4%", positive: true}}
-        />
+          <p className="mt-2 text-2xl font-semibold text-ink dark:text-white">
+            {loadingProducts
+              ? "..."
+              : totalProductError
+                ? "-"
+                : totalProducts.toLocaleString("id-ID")}
+          </p>
+
+          {totalProductError && (
+            <p className="mt-1 text-xs text-red-500">{totalProductError}</p>
+          )}
+        </div>
       </div>
     </section>
   );
