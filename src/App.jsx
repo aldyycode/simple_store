@@ -4,10 +4,9 @@ import Dashboard from "./pages/Dashboard";
 import Product from "./pages/Product";
 import ProductForm from "./pages/ProductForm";
 import ProductEdit from "./pages/ProductEdit";
-// import Users from "./pages/Users"; // nanti jika sudah ada
+import Users from "./pages/Users";
 
 export default function App() {
-  // view = { name: 'list' | 'add' | 'edit', id: number|null }
   const [view, setView] = useState({name: "list", id: null});
 
   const resetView = () => setView({name: "list", id: null});
@@ -28,16 +27,16 @@ export default function App() {
         }
 
         if (pageTitle === "Users") {
-          // return <Users />; // ganti saat halaman Users sudah dibuat
+          // Nanti bisa tambah UserForm / UserEdit
           return (
-            <div
-              className="rounded-2xl border-2 border-dashed border-line p-16 text-center
-              dark:border-slate-800"
-            >
-              <p className="text-sm text-muted dark:text-slate-400">
-                Halaman Users belum dibuat.
-              </p>
-            </div>
+            <Users
+              onAdd={() => {
+                /* navigasi ke form tambah user */
+              }}
+              onEdit={(u) => {
+                /* navigasi ke form edit user */
+              }}
+            />
           );
         }
 
@@ -45,8 +44,8 @@ export default function App() {
           <Dashboard
             title={pageTitle}
             onNavigate={(target) => {
-              navigate(target); // ubah judul + active menu
-              resetView(); // reset view produk (add/edit → list)
+              navigate(target);
+              resetView();
             }}
           />
         );
