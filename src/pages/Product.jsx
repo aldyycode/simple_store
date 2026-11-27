@@ -1,4 +1,4 @@
-import {useState, useEffect} from "react";
+import {useState, useEffect, useMemo} from "react";
 import supabase from "../config/supabaseClient";
 import {
   PlusIcon,
@@ -6,19 +6,32 @@ import {
   TrashIcon,
   EyeIcon,
   MagnifyingGlassIcon,
-  FunnelIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
 } from "@heroicons/react/24/outline";
 import Swal from "sweetalert2";
+import ProductFilter from "../components/ProductFilter";
+import ProductDetailDrawer from "../components/ProductDetailDrawer";
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 5;
 
-export default function Product({onAdd}) {
+const DEFAULT_FILTERS = {
+  stock: "all", // all | out | low | available
+  minPrice: "",
+  maxPrice: "",
+  sort: "default", // default | price-asc | price-desc
+};
+
+export default function Product({onAdd, onEdit}) {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [filters, setFilters] = useState(DEFAULT_FILTERS);
   const [page, setPage] = useState(1);
+
+  // Detail drawer state
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [selected, setSelected] = useState(null);
 
   const isDark = () => document.documentElement.classList.contains("dark");
 
@@ -28,7 +41,7 @@ export default function Product({onAdd}) {
     customClass: {popup: "rounded-2xl"},
   };
 
-  /* ----------------------------- FETCH DATA ----------------------------- */
+  /* ----------------------------- FETCH ----------------------------- */
   const fetchProducts = async () => {
     setLoading(true);
     const {data, error} = await supabase
@@ -37,7 +50,6 @@ export default function Product({onAdd}) {
       .order("id", {ascending: true});
 
     if (error) {
-      console.error("Error fetching products:", error);
       Swal.fire({
         icon: "error",
         title: "Gagal memuat data",
@@ -55,7 +67,7 @@ export default function Product({onAdd}) {
     fetchProducts();
   }, []);
 
-  /* ------------------------------ HELPERS ------------------------------- */
+  /* ----------------------------- HELPERS ----------------------------- */
   const formatRupiah = (n) =>
     new Intl.NumberFormat("id-ID", {
       style: "currency",
@@ -72,23 +84,55 @@ export default function Product({onAdd}) {
     return "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400";
   };
 
-  /* ------------------------------ FILTER -------------------------------- */
-  const filtered = products.filter((p) =>
-    (p.name || "").toLowerCase().includes(search.toLowerCase()),
-  );
+  /* ------------------------ FILTER + SORT (multi) ------------------------ */
+  const filtered = useMemo(() => {
+    let result = [...products];
 
-  /* --------------------------- PAGINATION ------------------------------- */
+    // 1) Search
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      result = result.filter((p) => (p.name || "").toLowerCase().includes(q));
+    }
+
+    // 2) Stock
+    if (filters.stock !== "all") {
+      result = result.filter((p) => {
+        const s = Number(p.stock) || 0;
+        if (filters.stock === "out") return s === 0;
+        if (filters.stock === "low") return s > 0 && s < 10;
+        if (filters.stock === "available") return s >= 10;
+        return true;
+      });
+    }
+
+    // 3) Rentang harga
+    const min = filters.minPrice !== "" ? Number(filters.minPrice) : null;
+    const max = filters.maxPrice !== "" ? Number(filters.maxPrice) : null;
+    if (min !== null) result = result.filter((p) => Number(p.price) >= min);
+    if (max !== null) result = result.filter((p) => Number(p.price) <= max);
+
+    // 4) Urutkan
+    if (filters.sort === "price-asc") {
+      result.sort((a, b) => Number(a.price) - Number(b.price));
+    } else if (filters.sort === "price-desc") {
+      result.sort((a, b) => Number(b.price) - Number(a.price));
+    }
+
+    return result;
+  }, [products, search, filters]);
+
+  /* --------------------------- PAGINATION --------------------------- */
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages);
   const startIdx = (safePage - 1) * PAGE_SIZE;
   const paginated = filtered.slice(startIdx, startIdx + PAGE_SIZE);
 
-  // Reset ke halaman 1 setiap kali pencarian berubah
+  // Reset halaman saat search / filter berubah
   useEffect(() => {
     setPage(1);
-  }, [search]);
+  }, [search, filters]);
 
-  /* ------------------------------ ACTIONS ------------------------------- */
+  /* ----------------------------- ACTIONS ----------------------------- */
   const handleAdd = () => {
     if (onAdd) onAdd();
     else
@@ -101,32 +145,31 @@ export default function Product({onAdd}) {
   };
 
   const handleDetail = (product) => {
-    Swal.fire({
-      title: product.name,
-      html: `
-        <div style="text-align:left">
-          <img src="${product.image}" alt="${product.name}"
-            style="width:100%;border-radius:12px;margin-bottom:12px;object-fit:cover;" />
-          <p><b>Harga:</b> ${formatRupiah(product.price)}</p>
-          <p><b>Stock:</b> ${product.stock ?? 0}</p>
-        </div>
-      `,
-      confirmButtonColor: "#0F172A",
-      ...swalTheme,
-    });
+    setSelected(product);
+    setDetailOpen(true);
+  };
+
+  const closeDetail = () => {
+    setDetailOpen(false);
+    // beri jeda agar animasi keluar selesai sebelum clear
+    setTimeout(() => setSelected(null), 300);
   };
 
   const handleEdit = (product) => {
-    Swal.fire({
-      icon: "info",
-      title: "Edit Produk",
-      text: `Edit: ${product.name}`,
-      confirmButtonColor: "#0F172A",
-      ...swalTheme,
-    });
+    closeDetail();
+    if (onEdit) onEdit(product);
+    else
+      Swal.fire({
+        icon: "info",
+        title: "Edit Produk",
+        text: `Edit: ${product.name}`,
+        confirmButtonColor: "#0F172A",
+        ...swalTheme,
+      });
   };
 
   const handleDelete = async (product) => {
+    closeDetail();
     const res = await Swal.fire({
       title: "Hapus produk?",
       text: `"${product.name}" akan dihapus permanen.`,
@@ -165,10 +208,9 @@ export default function Product({onAdd}) {
     });
   };
 
-  /* ------------------------ ZOOM IMAGE HANDLER -------------------------- */
   const handleZoom = (product) => {
     Swal.fire({
-      imageUrl: product.image,
+      imageUrl: product.image || product.image_url,
       imageAlt: product.name,
       title: product.name,
       width: "min(92vw, 820px)",
@@ -180,10 +222,10 @@ export default function Product({onAdd}) {
     });
   };
 
-  /* ------------------------------- RENDER ------------------------------- */
+  /* ------------------------------ RENDER ------------------------------ */
   return (
     <section className="space-y-6">
-      {/* HEADER + TOMBOL TAMBAH */}
+      {/* HEADER */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-xl font-semibold text-ink dark:text-white">
@@ -206,7 +248,7 @@ export default function Product({onAdd}) {
         </button>
       </div>
 
-      {/* TOOLBAR SEARCH */}
+      {/* TOOLBAR: Search + Filter */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="relative w-full sm:max-w-xs">
           <MagnifyingGlassIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted dark:text-slate-400" />
@@ -223,14 +265,7 @@ export default function Product({onAdd}) {
           />
         </div>
 
-        <button
-          className="inline-flex items-center gap-2 rounded-lg border border-line bg-white px-3 py-2 text-sm
-            text-muted hover:text-ink hover:bg-surface transition
-            dark:bg-slate-900 dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-800"
-        >
-          <FunnelIcon className="h-4 w-4" />
-          Filter
-        </button>
+        <ProductFilter filters={filters} onChange={setFilters} />
       </div>
 
       {/* TABEL */}
@@ -254,7 +289,6 @@ export default function Product({onAdd}) {
               </tr>
             </thead>
             <tbody className="divide-y divide-line dark:divide-slate-800">
-              {/* LOADING */}
               {loading && (
                 <tr>
                   <td
@@ -266,7 +300,6 @@ export default function Product({onAdd}) {
                 </tr>
               )}
 
-              {/* EMPTY */}
               {!loading && paginated.length === 0 && (
                 <tr>
                   <td
@@ -278,14 +311,12 @@ export default function Product({onAdd}) {
                 </tr>
               )}
 
-              {/* DATA */}
               {!loading &&
                 paginated.map((p) => (
                   <tr
                     key={p.id}
                     className="hover:bg-surface/50 dark:hover:bg-slate-800/50 transition-colors"
                   >
-                    {/* PRODUCT + IMAGE (klik → zoom) */}
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
                         <button
@@ -297,7 +328,7 @@ export default function Product({onAdd}) {
                             focus:outline-none focus:ring-2 focus:ring-ink/20"
                         >
                           <img
-                            src={p.image}
+                            src={p.image || p.image_url}
                             alt={p.name}
                             className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-110"
                             loading="lazy"
@@ -315,28 +346,22 @@ export default function Product({onAdd}) {
                           <p className="font-medium text-ink dark:text-white truncate">
                             {p.name}
                           </p>
-                          <p className="text-xs text-muted dark:text-slate-400"></p>
                         </div>
                       </div>
                     </td>
 
-                    {/* PRICE */}
                     <td className="px-4 py-3 text-ink dark:text-white whitespace-nowrap">
                       {formatRupiah(p.price)}
                     </td>
 
-                    {/* STOCK */}
                     <td className="px-4 py-3">
                       <span
-                        className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${stockBadge(
-                          p.stock,
-                        )}`}
+                        className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${stockBadge(p.stock)}`}
                       >
                         {Number(p.stock) === 0 ? "Habis" : `${p.stock} pcs`}
                       </span>
                     </td>
 
-                    {/* ACTIONS */}
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-1">
                         <button
@@ -371,7 +396,7 @@ export default function Product({onAdd}) {
           </table>
         </div>
 
-        {/* FOOTER PAGINATION */}
+        {/* PAGINATION */}
         <div
           className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between
           border-t border-line px-4 py-3 text-xs text-muted
@@ -399,7 +424,6 @@ export default function Product({onAdd}) {
               Prev
             </button>
 
-            {/* Nomor halaman (maks 5 terdekat) */}
             {Array.from({length: totalPages}).map((_, i) => {
               const n = i + 1;
               const visible =
@@ -410,13 +434,13 @@ export default function Product({onAdd}) {
               if (!visible) {
                 if (n === 2 && safePage > 3)
                   return (
-                    <span key={`dots-l-${n}`} className="px-1">
+                    <span key={`l-${n}`} className="px-1">
                       …
                     </span>
                   );
                 if (n === totalPages - 1 && safePage < totalPages - 2)
                   return (
-                    <span key={`dots-r-${n}`} className="px-1">
+                    <span key={`r-${n}`} className="px-1">
                       …
                     </span>
                   );
@@ -451,6 +475,18 @@ export default function Product({onAdd}) {
           </div>
         </div>
       </div>
+
+      {/* Drawer di akhir, sebelum </section> */}
+      <ProductDetailDrawer
+        open={detailOpen}
+        product={selected}
+        onClose={closeDetail}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+        onZoom={handleZoom}
+        formatRupiah={formatRupiah}
+        stockBadge={stockBadge}
+      />
     </section>
   );
 }

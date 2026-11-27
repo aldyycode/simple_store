@@ -16,6 +16,22 @@ export const CloudArrowUpIcon = ({className = base}) => (
   </svg>
 );
 
+export const ArrowsPointingOutIcon = ({className = base}) => (
+  <svg
+    className={className}
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke="currentColor"
+    strokeWidth="1.8"
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M3 9V3h6M21 9V3h-6M3 15v6h6M21 15v6h-6"
+    />
+  </svg>
+);
+
 export const PhotoIcon = ({className = base}) => (
   <svg
     className={className}
