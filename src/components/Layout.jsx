@@ -1,18 +1,26 @@
 import {useState} from "react";
 import Sidebar from "./Sidebar";
 import Header from "./Header";
+import ShortcutHelp from "./ShortcutHelp";
+import {useShortcuts} from "../hooks/useShortcuts";
 
 export default function Layout({children}) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [activeMenu, setActiveMenu] = useState("Dashboard");
   const [pageTitle, setPageTitle] = useState("Dashboard");
+  const [helpOpen, setHelpOpen] = useState(false);
 
-  const handleMenuClick = (item) => {
-    setActiveMenu(item.label);
-    setPageTitle(item.label);
+  const navigate = (label) => {
+    setActiveMenu(label);
+    setPageTitle(label);
     setMobileOpen(false);
   };
+
+  const handleMenuClick = (item) => navigate(item.label);
+
+  // Shortcut Alt+1/2/3 → pindah halaman, "?" → buka bantuan
+  useShortcuts(navigate, () => setHelpOpen(true));
 
   return (
     <div className="flex h-screen overflow-hidden bg-white dark:bg-slate-950">
@@ -37,14 +45,19 @@ export default function Layout({children}) {
           onToggleCollapse={() => setCollapsed((v) => !v)}
           onOpenMobile={() => setMobileOpen(true)}
           pageTitle={pageTitle}
+          onShowHelp={() => setHelpOpen(true)} // ← tombol "?" di header
         />
 
         <main className="flex-1 overflow-y-auto bg-white dark:bg-slate-950">
           <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-6">
-            {typeof children === "function" ? children(pageTitle) : children}
+            {typeof children === "function"
+              ? children(pageTitle, navigate)
+              : children}
           </div>
         </main>
       </div>
+
+      <ShortcutHelp open={helpOpen} onClose={() => setHelpOpen(false)} />
     </div>
   );
 }

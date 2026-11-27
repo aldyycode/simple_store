@@ -1,3 +1,4 @@
+import {useRef, useState} from "react";
 import {
   HomeIcon,
   UsersIcon,
@@ -6,6 +7,8 @@ import {
   XMarkIcon,
 } from "@heroicons/react/24/outline";
 import Swal from "sweetalert2";
+import {getShortcutLabel} from "../config/shortcuts";
+import MenuTooltip from "./MenuTooltip";
 
 const MENU = [
   {label: "Dashboard", icon: HomeIcon},
@@ -21,6 +24,10 @@ export default function Sidebar({
   onCloseMobile,
 }) {
   const width = collapsed ? "md:w-[72px]" : "md:w-64";
+
+  // Ref & state hover per menu
+  const itemRefs = useRef({});
+  const [hovered, setHovered] = useState(null); // label menu yang di-hover
 
   const handleLogout = async () => {
     const isDark = document.documentElement.classList.contains("dark");
@@ -71,7 +78,7 @@ export default function Sidebar({
             className={`text-sm font-semibold text-ink whitespace-nowrap transition-opacity dark:text-white
               ${collapsed ? "md:opacity-0 md:w-0" : "opacity-100"}`}
           >
-            Admin Simple Store
+            Admin Panel
           </span>
         </div>
         <button
@@ -89,12 +96,19 @@ export default function Sidebar({
           {MENU.map((item) => {
             const Icon = item.icon;
             const active = activeMenu === item.label;
+            const shortcut = getShortcutLabel(item.label);
+            const isHover = hovered === item.label;
+
             return (
               <li key={item.label}>
                 <button
+                  ref={(el) => (itemRefs.current[item.label] = el)}
                   onClick={() => onMenuClick(item)}
-                  title={collapsed ? item.label : undefined}
-                  className={`group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors
+                  onMouseEnter={() => setHovered(item.label)}
+                  onMouseLeave={() => setHovered(null)}
+                  onFocus={() => setHovered(item.label)}
+                  onBlur={() => setHovered(null)}
+                  className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors
                     ${
                       active
                         ? "bg-white text-ink shadow-sm ring-1 ring-line dark:bg-slate-800 dark:text-white dark:ring-slate-700"
@@ -104,12 +118,20 @@ export default function Sidebar({
                 >
                   <Icon className="h-5 w-5 shrink-0" />
                   <span
-                    className={`whitespace-nowrap transition-opacity
+                    className={`whitespace-nowrap transition-opacity flex-1 text-left
                       ${collapsed ? "md:opacity-0 md:w-0 md:overflow-hidden" : "opacity-100"}`}
                   >
                     {item.label}
                   </span>
                 </button>
+
+                {/* Tooltip via Portal */}
+                <MenuTooltip
+                  anchorRef={{current: itemRefs.current[item.label]}}
+                  open={isHover}
+                  label={item.label}
+                  shortcut={shortcut}
+                />
               </li>
             );
           })}
@@ -125,14 +147,13 @@ export default function Sidebar({
           <div className="h-9 w-9 shrink-0 rounded-full bg-ink/10 flex items-center justify-center text-xs font-semibold text-ink dark:bg-slate-700 dark:text-slate-200">
             US
           </div>
-          {/* ADMIN PROFILE  */}
           <div className={`min-w-0 flex-1 ${collapsed ? "md:hidden" : ""}`}>
-            <p className="truncate text-xs text-muted dark:text-slate-400"></p>
-
-            <div>
-              <p className="truncate text-sm font-medium text-ink dark:text-white"></p>
-              <p className="truncate text-xs text-muted dark:text-slate-400"></p>
-            </div>
+            <p className="truncate text-sm font-medium text-ink dark:text-white">
+              User Name
+            </p>
+            <p className="truncate text-xs text-muted dark:text-slate-400">
+              user@mail.com
+            </p>
           </div>
           <button
             onClick={handleLogout}

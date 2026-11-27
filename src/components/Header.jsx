@@ -6,6 +6,7 @@ import {
   ChevronLeftIcon,
   SunIcon,
   MoonIcon,
+  QuestionMarkCircleIcon,
 } from "@heroicons/react/24/outline";
 import {useTheme} from "../context/ThemeContext";
 
@@ -14,6 +15,7 @@ export default function Header({
   onToggleCollapse,
   onOpenMobile,
   pageTitle,
+  onShowHelp,
 }) {
   const [openNotif, setOpenNotif] = useState(false);
   const [openProfile, setOpenProfile] = useState(false);
@@ -72,6 +74,13 @@ export default function Header({
 
       {/* Kanan */}
       <div className="flex items-center gap-2">
+        <button
+          onClick={onShowHelp}
+          className="rounded-md p-2 text-muted hover:bg-line hover:text-ink transition
+    dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
+          aria-label="Bantuan shortcut"
+          title="Shortcut keyboard (?)"
+        ></button>
         {/* Theme toggle */}
         <button
           onClick={toggleTheme}
