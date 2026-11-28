@@ -12,7 +12,7 @@ import {
 import Swal from "sweetalert2";
 import UserDetailDrawer from "../components/UserDetailDrawer";
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 5;
 
 export default function Users({onAdd, onEdit}) {
   const [users, setUsers] = useState([]);

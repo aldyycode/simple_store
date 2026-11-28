@@ -9,6 +9,7 @@ import {
   QuestionMarkCircleIcon,
 } from "@heroicons/react/24/outline";
 import {useTheme} from "../context/ThemeContext";
+import {useAuth} from "../context/AuthContext";
 
 export default function Header({
   collapsed,
@@ -22,6 +23,7 @@ export default function Header({
   const notifRef = useRef(null);
   const profileRef = useRef(null);
   const {theme, toggleTheme} = useTheme();
+  const {admin, logout} = useAuth();
 
   useEffect(() => {
     const onClick = (e) => {
@@ -58,7 +60,9 @@ export default function Header({
           aria-label="Collapse sidebar"
         >
           <ChevronLeftIcon
-            className={`h-5 w-5 transition-transform duration-300 ${collapsed ? "rotate-180" : ""}`}
+            className={`h-5 w-5 transition-transform duration-300 ${
+              collapsed ? "rotate-180" : ""
+            }`}
           />
         </button>
 
@@ -77,11 +81,13 @@ export default function Header({
         <button
           onClick={onShowHelp}
           className="rounded-md p-2 text-muted hover:bg-line hover:text-ink transition
-    dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
+            dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
           aria-label="Bantuan shortcut"
           title="Shortcut keyboard (?)"
-        ></button>
-        {/* Theme toggle */}
+        >
+          <QuestionMarkCircleIcon className="h-5 w-5" />
+        </button>
+
         <button
           onClick={toggleTheme}
           className="rounded-md p-2 text-muted hover:bg-line hover:text-ink transition
@@ -115,7 +121,11 @@ export default function Header({
             className={`absolute right-0 mt-2 w-72 origin-top-right rounded-xl border border-line
               bg-white shadow-lg transition-all duration-150
               dark:bg-slate-900 dark:border-slate-800
-              ${openNotif ? "opacity-100 scale-100 pointer-events-auto" : "opacity-0 scale-95 pointer-events-none"}`}
+              ${
+                openNotif
+                  ? "opacity-100 scale-100 pointer-events-auto"
+                  : "opacity-0 scale-95 pointer-events-none"
+              }`}
           >
             <div
               className="border-b border-line px-4 py-3 text-sm font-semibold text-ink
@@ -144,7 +154,7 @@ export default function Header({
               className="h-8 w-8 rounded-full bg-ink text-white text-xs font-semibold flex items-center justify-center
               dark:bg-white dark:text-ink"
             >
-              US
+              {(admin?.username || "A").slice(0, 2).toUpperCase()}
             </div>
             <ChevronDownIcon className="h-4 w-4 text-muted dark:text-slate-400" />
           </button>
@@ -153,14 +163,18 @@ export default function Header({
             className={`absolute right-0 mt-2 w-48 origin-top-right rounded-xl border border-line
               bg-white shadow-lg transition-all duration-150
               dark:bg-slate-900 dark:border-slate-800
-              ${openProfile ? "opacity-100 scale-100 pointer-events-auto" : "opacity-0 scale-95 pointer-events-none"}`}
+              ${
+                openProfile
+                  ? "opacity-100 scale-100 pointer-events-auto"
+                  : "opacity-0 scale-95 pointer-events-none"
+              }`}
           >
             <div className="px-4 py-3 border-b border-line dark:border-slate-800">
               <p className="text-sm font-medium text-ink dark:text-white">
-                User Name
+                {admin?.username || "Admin"}
               </p>
               <p className="text-xs text-muted truncate dark:text-slate-400">
-                user@mail.com
+                {admin?.email || "-"}
               </p>
             </div>
             <ul className="py-1 text-sm text-muted dark:text-slate-400">
@@ -178,6 +192,15 @@ export default function Header({
                   dark:hover:bg-slate-800 dark:hover:text-white"
                 >
                   Settings
+                </button>
+              </li>
+              <li>
+                <button
+                  onClick={logout}
+                  className="w-full px-4 py-2 text-left text-rose-600 hover:bg-rose-50
+                    dark:text-rose-400 dark:hover:bg-rose-500/10"
+                >
+                  Logout
                 </button>
               </li>
             </ul>

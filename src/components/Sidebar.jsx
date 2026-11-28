@@ -8,6 +8,7 @@ import {
 } from "@heroicons/react/24/outline";
 import Swal from "sweetalert2";
 import {getShortcutLabel} from "../config/shortcuts";
+import {useAuth} from "../context/AuthContext";
 import MenuTooltip from "./MenuTooltip";
 
 const MENU = [
@@ -23,11 +24,10 @@ export default function Sidebar({
   onMenuClick,
   onCloseMobile,
 }) {
+  const {admin, logout} = useAuth();
   const width = collapsed ? "md:w-[72px]" : "md:w-64";
-
-  // Ref & state hover per menu
   const itemRefs = useRef({});
-  const [hovered, setHovered] = useState(null); // label menu yang di-hover
+  const [hovered, setHovered] = useState(null);
 
   const handleLogout = async () => {
     const isDark = document.documentElement.classList.contains("dark");
@@ -44,16 +44,7 @@ export default function Sidebar({
       color: isDark ? "#E5E7EB" : "#0F172A",
       customClass: {popup: "rounded-2xl"},
     });
-    if (res.isConfirmed) {
-      Swal.fire({
-        icon: "success",
-        title: "Berhasil logout",
-        timer: 1200,
-        showConfirmButton: false,
-        background: isDark ? "#0f172a" : "#ffffff",
-        color: isDark ? "#E5E7EB" : "#0F172A",
-      });
-    }
+    if (res.isConfirmed) logout();
   };
 
   return (
@@ -113,19 +104,21 @@ export default function Sidebar({
                       active
                         ? "bg-white text-ink shadow-sm ring-1 ring-line dark:bg-slate-800 dark:text-white dark:ring-slate-700"
                         : "text-muted hover:bg-white hover:text-ink dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
-                    }
-                  `}
+                    }`}
                 >
                   <Icon className="h-5 w-5 shrink-0" />
                   <span
                     className={`whitespace-nowrap transition-opacity flex-1 text-left
-                      ${collapsed ? "md:opacity-0 md:w-0 md:overflow-hidden" : "opacity-100"}`}
+                      ${
+                        collapsed
+                          ? "md:opacity-0 md:w-0 md:overflow-hidden"
+                          : "opacity-100"
+                      }`}
                   >
                     {item.label}
                   </span>
                 </button>
 
-                {/* Tooltip via Portal */}
                 <MenuTooltip
                   anchorRef={{current: itemRefs.current[item.label]}}
                   open={isHover}
@@ -145,14 +138,14 @@ export default function Sidebar({
             ${collapsed ? "md:justify-center" : ""}`}
         >
           <div className="h-9 w-9 shrink-0 rounded-full bg-ink/10 flex items-center justify-center text-xs font-semibold text-ink dark:bg-slate-700 dark:text-slate-200">
-            US
+            {(admin?.username || "A").slice(0, 2).toUpperCase()}
           </div>
           <div className={`min-w-0 flex-1 ${collapsed ? "md:hidden" : ""}`}>
             <p className="truncate text-sm font-medium text-ink dark:text-white">
-              User Name
+              {admin?.username || "Admin"}
             </p>
             <p className="truncate text-xs text-muted dark:text-slate-400">
-              user@mail.com
+              {admin?.email || "admin@mail.com"}
             </p>
           </div>
           <button

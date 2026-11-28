@@ -32,6 +32,22 @@ export const ArrowsPointingOutIcon = ({className = base}) => (
   </svg>
 );
 
+export const EyeSlashIcon = ({className = "h-5 w-5"}) => (
+  <svg
+    className={className}
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke="currentColor"
+    strokeWidth="1.8"
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M3 3l18 18M10.6 10.6a2 2 0 0 0 2.8 2.8M9.9 5.2A10.9 10.9 0 0 1 12 5c6.5 0 10 7 10 7a17 17 0 0 1-3.1 4.1M6.1 6.1A17 17 0 0 0 2 12s3.5 7 10 7c1.4 0 2.7-.3 3.9-.9"
+    />
+  </svg>
+);
+
 export const PhotoIcon = ({className = base}) => (
   <svg
     className={className}
